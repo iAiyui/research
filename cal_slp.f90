@@ -92,7 +92,9 @@ real*4		:: pai							             ! circular constant
 real*4		:: a, b, c, d, e			         	! coefficients of Higdon's absorption boundary
 real*4    :: Z , arufa , a1                !cal abs
 real*4    :: xx,yy,r,Rlength               !cal src
-!座標を読み込む
+!------------------------------------------------------------+
+!reading coodinate
+!------------------------------------------------------------+
 open (50,file='E:\yui\00.program\0_input\4_double_1.txt')
     read (50,'(I3)')  coordinateno
     allocate( x       (coordinateno+1))
@@ -144,7 +146,7 @@ data counter/20/   !生成ファイル数(装置番号)
 data rp_x / 25/    !受音点ピッチ(x方向)
 data rp_y / 25/    !受音点ピッチ(y方向)
 data arufa/0.1/    !壁面吸音率1まで
-data source/1 /
+data source/1 /    !0:純音 1:インパルス
 data Rlength/7.65/ !インパルス音,周波数特性の決定 7.65:500Hz, 1.91:2k, 9.61:0.1グリッド@500Hz
 data output / 0 /  !0=波形のみ　1 =伝搬出力
 
@@ -207,8 +209,9 @@ end do
 
 
 
-
+!------------------------------------------------------------+
 ! input wave definition (one cycle of sinusoidal wave on one point)
+!------------------------------------------------------------+
 !First source
 if(source == 0)then
     do t = 1,tx! 2*td!一波長だけ印可するtx
@@ -232,7 +235,9 @@ end if
 
 
 !前準備
-!法線ベクトルの組み合わせによって符号を判断 decision sign by combination Normal vector
+!------------------------------------------+
+!法線ベクトルの組み合わせによって符号を判断 
+!------------------------------------------+
 t = 1
     if( Judge(1) == Judge(t+1) .and. Judge(t+1) == Judge(t+2) .and. Judge(t+2) == Judge(t+3) .and. Judge(t+3) == Judge(1))then
         print*, 'all value same'
@@ -241,8 +246,9 @@ t = 1
         print *, 'wrong value mixed'
         Judge(1) = 0  !pattern wrong 
     end if
-
+!-----------------------------------------+
 !get slope between 2points
+!-----------------------------------------+
 !t =1
 do t = 1,coordinateno
          if (x(t) /= x(t+1) .and. y(t) /= y(t+1) )then 
@@ -257,8 +263,10 @@ do t = 1,coordinateno
     call cal_linertransform(unit_vector_x(t), unit_vector_y(t), nx(t), ny(t) )
 end do
 
+!-----------------------------------------+
 !直線のサンプリング!
 !配列要素を1とそれ以外に分ける
+!-----------------------------------------+
 do i = 1, coordinateno
     if ( abs(katamuki(i) ) < 1 )then
         if (x(i) < x(i+1) )then ! 座標が大きい順序になっているか
@@ -296,7 +304,9 @@ do i = 1, coordinateno
     end if
 end do
 
+!-----------------------------------------+
 !■■■ソートして挟み込む範囲の決定■■■!
+!-----------------------------------------+
 do i = 1,ix
     do k = 1,coordinateno
         tmp(k) = cor(k,i)
@@ -323,7 +333,9 @@ print*,i, range_x_min(i),range_x_max(i)
 end do
 
 
+!-----------------------------------------+
 !■■■x座標をソートして挟み込む範囲の決定■■■!
+!-----------------------------------------+
 do i = 1,coordinateno+1
     x2(i) = x(i)
     y2(i) = y(i)
@@ -340,7 +352,9 @@ print*, y2(1),y2(2),y2(3),y2(4),y2(5)
 
 
 call system_clock(t1)   ! 開始時を記録
+!----------------------------------------+
 ! time loop
+!----------------------------------------+
 do t = 1, tx
 
 
@@ -353,8 +367,9 @@ do t = 1, tx
 
 ! input of sound pressure
 ! インパルス応答使うときはコメントアウト
-    !p1(id,jd) = pin(t) + p1(id,jd)
-
+if(source == 0)then
+    p1(id,jd) = pin(t) + p1(id,jd)
+end if
 
 	! swap of sound pressure
 	do i = x(1)-1,x(5)+1!0, ix + 1
@@ -381,12 +396,10 @@ do t = 1, tx
 
 !
 !nx,nyを把握したので，それぞれ一段下げたセルにしたり，ずらしたりする．19:30@yui
-!
-
+!-----------------------------------------+
 !境界条件の設定
-!
-!
-!
+!-----------------------------------------+
+
 !do i = 1,4
 i=2
 !print*, i
@@ -394,7 +407,6 @@ print *, katamuki(i),nx(i),ny(i) ,y2(i),y2(i+1)
         if(abs(katamuki(i) ) > 1 ) then
 !       print*, '傾き45いじょう'
             if(y(i) < y(i+1))then
-!print*, y2(i),y2(i+1)
                 do pos_y = y2(i), y2(i+1)!y2(i)のほうが値が大きい場合
                      if (nx(i) > 0)then
                          u1( cor_x_round(i, pos_y)   ,pos_y +1  )=0!-  p2( cor_x_round(i, pos_y)  ,pos_y +1 )*(nx(i)/Z)
@@ -470,10 +482,9 @@ end do
 	end do
 	
 
+!-----------------------------------------+
 !インパルス応答書き出し!
-
-
-
+!-----------------------------------------+
 
 if(output == 0)then
 l =20
@@ -489,7 +500,44 @@ end do
 counter = 20
 end if
 
-end do
+
+!-----------------------------------------+
+!伝搬書き出し
+!-----------------------------------------+
+
+if(output == 1)then
+    write(str,'("data/", a, "_", i5.5, ".vtk")') trim(fn), t
+    str = trim(str)
+    open(1, file = str, status = 'replace')
+    
+    write output data
+    
+    write(1,'(a)') '# vtk DataFile Version 2.0'
+    write(1,'(a)') trim(str)
+    write(1,'(a)') 'ASCII'
+    write(1,'(a)') 'DATASET STRUCTURED_POINTS'
+    write(1,'(a,3i5)') 'DIMENSIONS ', ix, jx, 1
+    write(1,'(a,3f7.3)') 'ORIGIN ', 0.0, 0.0, 0.0
+    write(1,'(a,3f7.3)') 'SPACING ', 0.02, 0.02, 0.00
+    write(1,'(a)') ''
+    write(1,'(a,i10)') 'POINT_DATA ', ix * jx * 1
+    write(1,'(a)') 'SCALARS SoundPressure float'
+    write(1,'(a)') 'LOOKUP_TABLE default'
+    do j = 1, jx
+        do i = 1, ix
+            write(1,*) p2(i,j)
+        end do
+    end do
+    write(1,'(a)') 'VECTORS ParticleVelocity float'
+    do j = 1, jx
+        do i = 1, ix
+            write(1,*) u2(i,j), v2(i,j), 0.0
+        end do
+    end do
+end if
+
+
+end do!all loop end 
 
 end program main
 
