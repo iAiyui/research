@@ -3,10 +3,10 @@ PROGRAM main
 implicit none
 
 !定数項-モジュール化したい-
-real*4,   parameter    :: dt =0.000208!0.00004
-real*4,   parameter    :: dx = 0.1!0.1
+real*4,   parameter    :: dt =0.00004!0.000208
+real*4,   parameter    :: dx = 0.02!0.1
 
-real*4,parameter       :: tiv = 0.1!解析時間長
+real*4,parameter       :: tiv = 0.005!解析時間長
 real*4,parameter    :: reg_lx =  6.0       !空間の横幅[m] real*4,parameter    :: reg_ly =  15.0       !空間の長さ[m]
 real*4,parameter    :: reg_ly =  6.0       !空間の横幅[m] real*4,parameter    :: reg_ly =  15.0       !空間の長さ[m]
 real*4,parameter       :: frequency = 25.4       !純音の場合の印加する周波数
@@ -95,7 +95,7 @@ real*4    :: xx,yy,r,Rlength               !cal src
 !------------------------------------------------------------+
 !reading coodinate
 !------------------------------------------------------------+
-open (50,file='E:\yui\00.program\0_input\4_double_1.txt')
+open (50,file='C:\Users\n\Documents\16_program\input\4_cor.txt')
     read (50,'(I3)')  coordinateno
     allocate( x       (coordinateno+1))
     allocate( y       (coordinateno+1))
@@ -145,10 +145,10 @@ close(50)
 data counter/20/   !生成ファイル数(装置番号)
 data rp_x / 25/    !受音点ピッチ(x方向)
 data rp_y / 25/    !受音点ピッチ(y方向)
-data arufa/0.1/    !壁面吸音率1まで
+data arufa/0.8/    !壁面吸音率1まで
 data source/1 /    !0:純音 1:インパルス
 data Rlength/7.65/ !インパルス音,周波数特性の決定 7.65:500Hz, 1.91:2k, 9.61:0.1グリッド@500Hz
-data output / 0 /  !0=波形のみ　1 =伝搬出力
+data output / 1 /  !0=波形のみ　1 =伝搬出力
 
 call cal_abs(arufa, Z) 
 
@@ -400,73 +400,79 @@ end if
 !境界条件の設定
 !-----------------------------------------+
 
+do pos_y = 1,jx
+    u1(250, pos_y) = p2(250, pos_y)/Z
+end do
+
+do pos_y = 1,jx
+    u1(100, pos_y) = -p2(101,pos_y)/Z
+end do
+
 !do i = 1,4
-i=2
-!print*, i
-print *, katamuki(i),nx(i),ny(i) ,y2(i),y2(i+1)
-        if(abs(katamuki(i) ) > 1 ) then
-!       print*, '傾き45いじょう'
-            if(y(i) < y(i+1))then
-                do pos_y = y2(i), y2(i+1)!y2(i)のほうが値が大きい場合
-                     if (nx(i) > 0)then
-                         u1( cor_x_round(i, pos_y)   ,pos_y +1  )=0!-  p2( cor_x_round(i, pos_y)  ,pos_y +1 )*(nx(i)/Z)
-                     else            
-                         u1( cor_x_round(i, pos_y) -1 ,pos_y  )=  0! p2( cor_x_round(i, pos_y)  ,pos_y +1)*(abs( nx(i) )/Z)
-                     end if
-                     
-                     if (ny(i) > 0)then                   
-                         v1( cor_x_round(i, pos_y)  ,pos_y  +1    )=0!- p2( cor_x_round(i, pos_y)  ,pos_y +1)*(ny(i)/Z)
-                     else            
-                         v1( cor_x_round(i, pos_y)  ,pos_y   -1    )= 0! p2( cor_x_round(i, pos_y)  ,pos_y +1)*(abs( ny(i) )/Z)
-                     end if
-                 end do
-            else
-                do pos_y = y2(i), y2(i+1), -1!y2(i+1)のほうが値が大きい場合
-                     if (nx(i) > 0)then
-                         u1( cor_x_round(i, pos_y)  -1  ,pos_y  +1 )=0!-  p2( cor_x_round(i, pos_y)  ,pos_y +1 )*(nx(i)/Z)
-                     else  
-                         u1( cor_x_round(i, pos_y) -1 ,pos_y  )=  0! p2( cor_x_round(i, pos_y)  ,pos_y +1)*(abs( nx(i) )/Z)
-                     end if
-                     
-                     if (ny(i) > 0)then
-                         v1( cor_x_round(i, pos_y)  ,pos_y     )=0!- p2( cor_x_round(i, pos_y)  ,pos_y +1)*(ny(i)/Z)
-                     else            
-                         v1( cor_x_round(i, pos_y)  ,pos_y   -1    )= 0! p2( cor_x_round(i, pos_y)  ,pos_y +1)*(abs( ny(i) )/Z)
-                     end if
-                 end do
-            end if
-        else
-       ! '傾き45以下'
-            if(x(i) < x(i+1) )then
-                do pos_x = x2(i), x2(i+1)
-                     if (nx(i) > 0)then
-                         u1( pos_x , cor_y_round(i, pos_x)+1 )=0!- p2( pos_x, cor_y_round(i, pos_x)+1 )*(nx(i)/Z)
-                     else             
-                         u1( pos_x -1  , cor_y_round(i, pos_x) )=0!  p2( pos_x, cor_y_round(i, pos_x)+1 )*(abs( nx(i) )/Z)
-                     end if
-                     
-                     if (ny(i) > 0)then                     
-                         v1( pos_x , cor_y_round(i, pos_x) +1)=0!- p2( pos_x, cor_y_round(i, pos_x)+1 )*(ny(i)/Z)
-                     else            
-                         v1( pos_x  , cor_y_round(i, pos_x) -1  )=0!  p2( pos_x, cor_y_round(i, pos_x)+1 )*(abs( ny(i) )/Z)
-                     end if
-                 end do
-            else
-                do pos_x = x2(i), x2(i+1), -1
-                     if (nx(i) > 0)then
-                         u1( pos_x , cor_y_round(i, pos_x) +1 )=0!- p2( pos_x, cor_y_round(i, pos_x)+1 )*(nx(i)/Z)
-                     else             
-                         u1( pos_x   , cor_y_round(i, pos_x) )=0!  p2( pos_x, cor_y_round(i, pos_x)+1 )*(abs( nx(i) )/Z)
-                     end if
-                     
-                     if (ny(i) > 0)then                     
-                         v1( pos_x , cor_y_round(i, pos_x) +1)=0!- p2( pos_x, cor_y_round(i, pos_x)+1 )*(ny(i)/Z) 
-                     else            
-                         v1( pos_x , cor_y_round(i, pos_x)   )=0!  p2( pos_x, cor_y_round(i, pos_x)+1 )*(abs( ny(i) )/Z)
-                     end if
-                 end do
-            end if
-        end if
+!print *, katamuki(i),nx(i),ny(i) ,y2(i),y2(i+1)
+!        if(abs(katamuki(i) ) > 1 ) then
+!!       print*, '傾き45いじょう'
+!            if(y(i) < y(i+1))then
+!                do pos_y = y2(i), y2(i+1)!y2(i)のほうが値が大きい場合
+!                     if (nx(i) > 0)then
+!                         u1( cor_x_round(i, pos_y)   ,pos_y +1  )=0!-  p2( cor_x_round(i, pos_y)  ,pos_y +1 )*(nx(i)/Z)
+!                     else            
+!                         u1( cor_x_round(i, pos_y) -1 ,pos_y  )=  0! p2( cor_x_round(i, pos_y)  ,pos_y +1)*(abs( nx(i) )/Z)
+!                     end if
+!                     
+!                     if (ny(i) > 0)then                   
+!                         v1( cor_x_round(i, pos_y)  ,pos_y  +1    )=0!- p2( cor_x_round(i, pos_y)  ,pos_y +1)*(ny(i)/Z)
+!                     else            
+!                         v1( cor_x_round(i, pos_y)  ,pos_y   -1    )= 0! p2( cor_x_round(i, pos_y)  ,pos_y +1)*(abs( ny(i) )/Z)
+!                     end if
+!                 end do
+!            else
+!                do pos_y = y2(i), y2(i+1), -1!y2(i+1)のほうが値が大きい場合
+!                     if (nx(i) > 0)then
+!                         u1( cor_x_round(i, pos_y)  -1  ,pos_y  +1 )=0!-  p2( cor_x_round(i, pos_y)  ,pos_y +1 )*(nx(i)/Z)
+!                     else  
+!                         u1( cor_x_round(i, pos_y) -1 ,pos_y  )=  0! p2( cor_x_round(i, pos_y)  ,pos_y +1)*(abs( nx(i) )/Z)
+!                     end if
+!                     
+!                     if (ny(i) > 0)then
+!                         v1( cor_x_round(i, pos_y)  ,pos_y     )=0!- p2( cor_x_round(i, pos_y)  ,pos_y +1)*(ny(i)/Z)
+!                     else            
+!                         v1( cor_x_round(i, pos_y)  ,pos_y   -1    )= 0! p2( cor_x_round(i, pos_y)  ,pos_y +1)*(abs( ny(i) )/Z)
+!                     end if
+!                 end do
+!            end if
+!        else
+!       ! '傾き45以下'
+!            if(x(i) < x(i+1) )then
+!                do pos_x = x2(i), x2(i+1)
+!                     if (nx(i) > 0)then
+!                         u1( pos_x , cor_y_round(i, pos_x)+1 )=0!- p2( pos_x, cor_y_round(i, pos_x)+1 )*(nx(i)/Z)
+!                     else             
+!                         u1( pos_x -1  , cor_y_round(i, pos_x) )=0!  p2( pos_x, cor_y_round(i, pos_x)+1 )*(abs( nx(i) )/Z)
+!                     end if
+!                     
+!                     if (ny(i) > 0)then                     
+!                         v1( pos_x , cor_y_round(i, pos_x) +1)=0!- p2( pos_x, cor_y_round(i, pos_x)+1 )*(ny(i)/Z)
+!                     else            
+!                         v1( pos_x  , cor_y_round(i, pos_x) -1  )=0!  p2( pos_x, cor_y_round(i, pos_x)+1 )*(abs( ny(i) )/Z)
+!                     end if
+!                 end do
+!            else
+!                do pos_x = x2(i), x2(i+1), -1
+!                     if (nx(i) > 0)then
+!                         u1( pos_x , cor_y_round(i, pos_x) +1 )=0!- p2( pos_x, cor_y_round(i, pos_x)+1 )*(nx(i)/Z)
+!                     else             
+!                         u1( pos_x   , cor_y_round(i, pos_x) )=0!  p2( pos_x, cor_y_round(i, pos_x)+1 )*(abs( nx(i) )/Z)
+!                     end if
+!                     
+!                     if (ny(i) > 0)then                     
+!                         v1( pos_x , cor_y_round(i, pos_x) +1)=0!- p2( pos_x, cor_y_round(i, pos_x)+1 )*(ny(i)/Z) 
+!                     else            
+!                         v1( pos_x , cor_y_round(i, pos_x)   )=0!  p2( pos_x, cor_y_round(i, pos_x)+1 )*(abs( ny(i) )/Z)
+!                     end if
+!                 end do
+!            end if
+!        end if
 
 do pos_x = 0,ix
     v1(pos_x, jx -1) = 0
@@ -506,11 +512,11 @@ end if
 !-----------------------------------------+
 
 if(output == 1)then
-    write(str,'("data/", a, "_", i5.5, ".vtk")') trim(fn), t
+    write(str,'("data_imp/", a, "_", i5.5, ".vtk")') trim(fn), t
     str = trim(str)
     open(1, file = str, status = 'replace')
     
-    write output data
+    !write output data
     
     write(1,'(a)') '# vtk DataFile Version 2.0'
     write(1,'(a)') trim(str)
