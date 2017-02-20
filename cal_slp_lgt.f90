@@ -35,7 +35,8 @@ real*4, 	dimension(0:ix+1,0:jx+1)	:: u2	             ! x-directional velocity (t
 real*4, 	dimension(0:ix+1,0:jx+1)	:: v1	             ! y-directional velocity (t = n + 1)
 real*4, 	dimension(0:ix+1,0:jx+1)	:: v2	             ! y-directional velocity (t = n)
 real*4, 	dimension(tx)				:: pin               ! input wave
-
+real*4,   dimension(2)         ::updw
+real*4,   dimension(2)         :: xlim
 !動的配列の確保
 !座標情報(x座標，y座標)
 integer*4, allocatable, dimension(:)   :: x                   ! coordinate_x
@@ -59,6 +60,7 @@ real*4,    allocatable, dimension(:)   :: norm                ! vector_Absolute
 !integer*4, allocatable, dimension(:)   :: x2                  ! coordinate_x
 !integer*4, allocatable, dimension(:)   :: y2 
 real*4,    allocatable, dimension(:,:) ::tmp
+real*4,    allocatable, dimension(:)   ::tmpno
 !
 !!直線座標算出用
 real*4,    allocatable, dimension(:,:,:) ::length
@@ -86,7 +88,7 @@ character*256	:: fn, str                  ! output file name and temporal pass s
 !integer*4  :: sampleno
 integer*4 t1, t2, t_rate, t_max, diff      ! time measurement
 
-integer*4   :: coordinateno   
+integer*4   :: coordinateno, no 
 integer*4	:: t, i, j, l, k, counter 
 integer*4   :: pos_y, pos_x, filenumber  	! loop variable
 integer*4 :: source , output                        !which source to use 
@@ -97,7 +99,7 @@ real*4    :: xx,yy,r,Rlength               !cal src
 !------------------------------------------------------------+
 !reading coodinate
 !------------------------------------------------------------+
-open (50,file='E:\yui\00.program\0_input\4_cor.txt')
+open (50,file='C:\Users\n\Documents\16_program\input\4_cor.txt')
     read (50,'(I3)')  coordinateno
     allocate( x       (coordinateno+1))
     allocate( y       (coordinateno+1))
@@ -107,6 +109,7 @@ open (50,file='E:\yui\00.program\0_input\4_cor.txt')
     
     allocate( length        (coordinateno,ix+1,jx+1) )
     allocate( tmp           (coordinateno,ix+1) )
+    allocate( tmpno         (coordinateno) )
 !    allocate( cor_x         (coordinateno,ix+1))      !座標数=直線の本数の関係を使用. (x,y) = (直線の本数,x方向への空間広さ)
 !    allocate( cor_y         (coordinateno,jx+1))       !ix,jx配列長にふさわしい方を判定する仕組みが必要
 !    allocate( cor_x_round   (coordinateno,ix+1))
@@ -221,6 +224,11 @@ do i = 1,coordinateno
     end do
 end do
 
+do k = 1,coordinateno
+    do i = 1, ix+1
+        tmp(k,i) = 0
+    end do
+end do
 
 
 !------------------------------------------------------------+
@@ -236,7 +244,7 @@ if(source == 0)then
     	end if
     end do
 else if(source == 1)then
-    !Second source
+    !Second sourc
     do i = 2,ix
     do j = 2,jx
         xx = (i-id)
@@ -326,62 +334,76 @@ end do
 !-----------------------------------------+
 !  old  ソートして挟み込む範囲の決定■■■!
 !-----------------------------------------+
-counter = 1
     do i = 1,ix
-        do j = 1,jx
-            do k =1,coordinateno
-            if(length(k,i,j) == 1)then
-                tmp(counter ,i) = j
-                counter = counter +1
-                print *, k,i,tmp(k,i)
-            end if
-            counter = 1
+    counter = 1
+        do k =1,coordinateno
+            do j = 1,jx
+                if(length(k,i,j) == 1)then
+                    tmp(counter ,i) = j
+                    print *, counter,i, tmp(counter, i) 
+                    counter = counter +1
+                end if
             end do
         end do
     end do
- 
-    print*, tmp(1,290),tmp(2,290),tmp(3,290)
-!    do k = 1,coordinateno
-!        tmp(k) = cor(k,i)
-!    end do
-!    call sortao( size(tmp), tmp)!全配列x座標におけるyの値を昇順ソートして返す
-!    call count_N( size(tmp), tmp, sampleno)
-!print*, i, tmp(1),tmp(2),tmp(3),tmp(4),sampleno!range_x_max(50),range_x_min(50)
-!
-!
-!    range_x_max(i) = tmp(1)!ソート後の一番大きい値
-!    if(sampleno == 1)then
-!        range_x_min(i) = 0
-!    else
-!        range_x_min(i) = tmp(sampleno)!ソート後の二番目に大きい値
-!    end if
-!
-!
-!    if(range_x_min(i) == 0)then !
-!        range_x_min(i) = 1
-!    end if
-!end do
-!do i =1,ix
-!print*,i, range_x_min(i),range_x_max(i)
-!end do
-!
-!
-!!-----------------------------------------+
-!!■■■x座標をソートして挟み込む範囲の決定■■■!
-!!-----------------------------------------+
-!do i = 1,coordinateno+1
-!    x2(i) = x(i)
-!    y2(i) = y(i)
-!end do
-!call sortdp( size(x), x)
-!
-!!print*, x(1),x(2),x(3),x(4),x(5) 
-!!print*, x(1),x(2),x(3),x(4),x(5) 
-!print*, y2(1),y2(2),y2(3),y2(4),y2(5)
-!!stop
+print *, tmp(1,161),tmp(2,161),tmp(3,161),tmp(4,161)
+print *, tmp(1,155),tmp(2,155),tmp(3,155),tmp(4,155)
+
+    do i = 1,ix-1
+        do no = 1, coordinateno
+            tmpno(no) = tmp(no, i)
+        end do
+        call countup_no(tmpno, coordinateno, updw,2)
+        print*, updw(1),',', updw(2)
+    end do
 
 
+!-----------------------------------------+
+!■■■x座標をソートして挟み込む範囲の決定■■■!
+!-----------------------------------------+
+call coo_maxmin(x, coordinateno, xlim)
 
+
+call system_clock(t1)   ! 開始時を記録
+!----------------------------------------+
+! time loop
+!----------------------------------------+
+do t = 1, tx
+! update of sound pressure
+    do i = xlim(1),xlim(2)
+        do j = 
+            p1(i,j)	= p2(i,j) - crn * (u2(i,j) - u2(i-1,j) + v2(i,j) - v2(i,j-1))
+        end do
+    end do
+    
+    !input of sound pressure
+    !インパルス応答使うときはコメントアウト
+    if(source == 0)then
+        p1(id,jd) = pin(t) + p1(id,jd)
+    end if
+    
+    ! swap of sound pressure
+    do i = xlim(1)-1,xlim(2)+1!0, ix + 1
+        do j =
+            p3(i,j)	= p2(i,j)
+            p2(i,j)	= p1(i,j)
+        end do
+    end do
+    
+    
+    ! update of x-directional velocity
+    do i = xlim(1)-1,xlim(2)+1
+        do j =
+            u1(i,j)	= u2(i,j) - crn * (p2(i+1,j) - p2(i,j))
+        end do
+    end do
+    
+    ! update of y-directional velocity
+    do i = xlim(1),xlim(2)!1, ix
+        do j =
+            v1(i,j)	= v2(i,j) - crn * (p2(i,j+1) - p2(i,j))
+        end do
+    end do
 
 
 
@@ -642,6 +664,77 @@ subroutine gen_rp(rp, sts, filename,lng,  wrt,wrt2,wrt3)
 
     return
 end subroutine 
+!-----------------------------------------------------------------------------+
+!配列の最大値と最小値のみ抽出して返すサブルーチン
+!in:list
+!
+!out:list[1]へ最大値，llist[2]へ最小値，あとは0で埋めた元の配列
+!------------------------------------------------------------------------------+
+subroutine list_min_max(list, N)
+    implicit none
+    integer*4 :: N,i
+    integer*4,intent(inout) ::list(1:N)
+
+    list(1) = maxval(list)
+    list(2) = minval(list)
+    
+    do i =3,N
+        list(i) = 0
+    end do
+
+    return
+end subroutine list_min_max
+
+
+!-------------------------------------------------------+
+!
+!-------------------------------------------------------+
+subroutine countup_no(tmp1, N, updw, no)
+    implicit none
+    integer*4              ::N,i,counter,no
+    real*4,intent(in)      ::tmp1(1:N)
+    real*4,intent(inout)   ::updw(no)
+
+
+    counter = 0
+    do i =1,N
+        if(tmp1(i) /= 0)then
+            counter = counter +1
+        end if
+    end do
+    call lid_zero(updw, tmp1, counter,N )
+    return
+end subroutine
+
+subroutine lid_zero(updw, list, lng, N )
+    implicit none
+    integer*4         :: lng, N, i, counter
+    real*4,intent(in) :: list(1:N)  !元の配列0含んでる
+    integer*4         :: tmp2(1:lng)        !この関数内でのみ使う配列
+    real*4,intent(inout)    :: updw(2)
+    
+    counter = 0
+    do i =1,N
+        if(list(i) /= 0)then
+            counter =counter +1 
+            tmp2(counter) = list(i)
+        end if
+    end do
+    call coo_maxmin(tmp2, lng, updw)
+    return
+end subroutine
+
+
+subroutine coo_maxmin(list, lng, updw)
+    implicit none
+    integer*4    :: lng,i
+    integer*4    :: list(1:lng)
+    real*4,intent(inout)    :: updw(2)
+    
+    updw(1) = minval(list)
+    updw(2) = maxval(list)
+    return
+end subroutine
 
 !■■■書き出し内容整形■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■!
 !in
