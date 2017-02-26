@@ -444,110 +444,24 @@ do t = 1, tx
                     !end if
                     if     (nx(k)>0 .and. ny(k)>0)then
                         print *, 'a'
-                        u1(i-1,j)  = p2(i,j) * abs(nx(k) )  /Z
-                        v1(i,j-1)  = p2(i,j) * abs(ny(k) ) /Z
+                        u1(i-1,j)   = -1*    p2(i,j) * abs(nx(k) )  /Z
+                        v1(i,j-1)   = -1*    p2(i,j) * abs(ny(k) ) /Z
                     else if(nx(k)>0 .and. ny(k)<0)then
-                        u1(i-1,j)   =    p2(i,j) * abs( nx(k)) /Z
-                        v1(i, j)    =-1* p2(i,j) * abs( ny(k)) /Z
+                        u1(i-1,j)   = -1*   p2(i,j) * abs( nx(k)) /Z
+                        v1(i, j)    = p2(i,j) * abs( ny(k)) /Z
                     
                     else if(nx(k)<0 .and. ny(k)>0)then
-                        u1(i ,j  )  = -1* p2(i,j) * abs(nx(k)) /Z
-                        v1(i ,j-1)  =   p2(i,j) * abs(ny(k)) /Z
+                        u1(i ,j  )  =  p2(i,j) * abs(nx(k)) /Z
+                        v1(i ,j-1)  = -1*    p2(i,j) * abs(ny(k)) /Z
                     
                     else if(nx(k)<0 .and. ny(k)<0)then
-                        u1(i,j) = -1* p2(i,j) * abs(nx(k)) /Z
-                        v1(i,j) = -1*p2(i,j) * abs(ny(k)) /Z
+                        u1(i,j)     =  p2(i,j) * abs(nx(k)) /Z
+                        v1(i,j)     =  p2(i,j) * abs(ny(k)) /Z
                     end if
                 end if
             end do
         end do
     end do
-!    
-!    k = 2
-!        do i = 1,ix
-!            do j =1,jx
-!                if( length(k, i, j ) == 1)then
-!                    !if(k==4) then
-!                    !    print *,k,i,j, nx(k),ny(k)
-!                    !end if
-!
-!                    if     (nx(k)>0 .and. ny(k)>0)then
-!                        u1(i-1,j)   = -1*p2(i,j) * nx(k) /Z
-!                        v1(i,j-1)   = -1*p2(i,j) * ny(k) /Z
-!                    else if(nx(k)>0 .and. ny(k)<0)then
-!                        u1(i-1,j)   =    p2(i,j) * nx(k) /Z
-!                        v1(i, j)    =-1* p2(i,j) * ny(k) /Z
-!                    
-!                    else if(nx(k)<0 .and. ny(k)>0)then
-!                        u1(i ,j  )  = -1* p2(i,j) * nx(k) /Z
-!                        v1(i ,j-1)  =   p2(i,j) * ny(k) /Z
-!                    
-!                    else if(nx(k)<0 .and. ny(k)<0)then
-!                        u1(i,j) =  p2(i,j) * nx(k) /Z
-!                        v1(i,j) =  p2(i,j) * ny(k) /Z
-!                    end if
-!                end if
-!            end do
-!        end do
-!    
-!    k= 3
-!    do i = 1,ix
-!            do j =1,jx
-!                if( length(k, i, j ) == 1)then
-!                    !if(k==4) then
-!                    !    print *,k,i,j, nx(k),ny(k)
-!                    !end if
-!
-!                    if     (nx(k)>0 .and. ny(k)>0)then
-!                        u1(i-1,j)   = -1*p2(i,j) * nx(k) /Z
-!                        v1(i,j-1)   = -1*p2(i,j) * ny(k) /Z
-!                    else if(nx(k)>0 .and. ny(k)<0)then
-!                        u1(i-1,j)   =    p2(i,j) * nx(k) /Z
-!                        v1(i, j)    =-1* p2(i,j) * ny(k) /Z
-!                    
-!                    else if(nx(k)<0 .and. ny(k)>0)then
-!                        u1(i ,j  )  = -1* p2(i,j) * nx(k) /Z
-!                        v1(i ,j-1)  =   p2(i,j) * ny(k) /Z
-!                    
-!                    else if(nx(k)<0 .and. ny(k)<0)then
-!                        u1(i,j) =  p2(i,j) * nx(k) /Z
-!                        v1(i,j) =  p2(i,j) * ny(k) /Z
-!                    end if
-!                end if
-!            end do
-!        end do
-!    k =4
-!        do i = 1,ix
-!            do j =1,jx
-!                if( length(k, i, j ) == 1)then
-!                    !if(k==4) then
-!                    !    print *,k,i,j, nx(k),ny(k)
-!                    !end if
-!
-!                    if     (nx(k)>0 .and. ny(k)>0)then
-!                        u1(i-1,j)   = -1*p2(i,j) * nx(k) /Z
-!                        v1(i,j-1)   = -1*p2(i,j) * ny(k) /Z
-!                    else if(nx(k)>0 .and. ny(k)<0)then
-!                        u1(i-1,j)   =    p2(i,j) * nx(k) /Z
-!                        v1(i, j)    =-1* p2(i,j) * ny(k) /Z
-!                    
-!                    else if(nx(k)<0 .and. ny(k)>0)then
-!                        u1(i ,j  )  = -1* p2(i,j) * nx(k) /Z
-!                        v1(i ,j-1)  =   p2(i,j) * ny(k) /Z
-!                    
-!                    else if(nx(k)<0 .and. ny(k)<0)then
-!                        u1(i,j) =  p2(i,j) * nx(k) /Z
-!                        v1(i,j) =  p2(i,j) * ny(k) /Z
-!                    end if
-!                end if
-!            end do
-!        end do
-!
-
-
-
-
-
  
       
     ! swap of velocity
