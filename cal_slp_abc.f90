@@ -20,7 +20,7 @@ integer*4,parameter	:: jx = (reg_ly)/dx     !901number of y-directional spatial 
 integer*4,parameter	:: tx = (tiv/dt)                   !計算秒数[s] 以前は更新回数[n]
 
 real*4,parameter	:: td = (1/frequency)/dt			! input frequency 純音の時使います
-integer*4,parameter	:: id = (ix)/2-50    !左右中心 x-directional position of input
+integer*4,parameter	:: id = (ix)/2    !左右中心 x-directional position of input
 integer*4,parameter	:: jd = (jx)/2!で設定音源		   !奥の壁から7m y-directional position of input
 
 real*4,	 parameter	:: crn = 0.7		! Courant number (= phase velocity * time interval / spatial interval)
@@ -101,7 +101,7 @@ real*4    :: xx,yy,r,Rlength               !cal src
 !------------------------------------------------------------+
 !reading coodinate
 !------------------------------------------------------------+
-open (50,file='C:\Users\yui\Documents\20_program\input\4_cor.txt',IOSTAT = Inputstatus)
+open (50,file='C:\Users\yui\Documents\20_program\input\4_cor2.txt',IOSTAT = Inputstatus)
     if ( Inputstatus > 0)then
         open (50,file='C:\Users\n\Documents\16_program\input\4_cor.txt')
     end if
@@ -114,7 +114,7 @@ open (50,file='C:\Users\yui\Documents\20_program\input\4_cor.txt',IOSTAT = Input
 !    allocate( y2       (coordinateno))
     
     allocate( length        (coordinateno,ix+1,jx+1) )
-    allocate( tmp           (coordinateno +3,ix+1) )
+    allocate( tmp           (coordinateno +300,ix+1) )
     allocate( tmpno         (coordinateno) )
 !    allocate( cor_x         (coordinateno,ix+1))      !座標数=直線の本数の関係を使用. (x,y) = (直線の本数,x方向への空間広さ)
 !    allocate( cor_y         (coordinateno,jx+1))       !ix,jx配列長にふさわしい方を判定する仕組みが必要
@@ -160,7 +160,7 @@ close(50)
 !data rp_x / 25/    !受音点ピッチ(x方向)
 !data rp_y / 25/    !受音点ピッチ(y方向)
 data counter/20/   !生成ファイル数(装置番号)
-data arufa/0.1/    !壁面吸音率1まで
+data arufa/0.9/    !壁面吸音率1まで
 data source/1 /    !0:純音 1:インパルス
 data Rlength/7.65/ !インパルス音,周波数特性の決定 7.65:500Hz, 1.91:2k, 9.61:0.1グリッド@500Hz
 data output / 1 /  !0=波形のみ　1 =伝搬出力
@@ -281,15 +281,20 @@ do t = 1,coordinateno
          if (x(t) /= x(t+1) .and. y(t) /= y(t+1) )then 
              call cal_katamuki(x(t), x(t+1), y(t), y(t+1), high(t), norm(t), katamuki_x(t), katamuki_y(t), katamuki(t) )
          else if(x(t) == x(t+1) )then
-              call cal_x_same(x(t), x(t+1), y(t), y(t+1), high(t), norm(t), katamuki_x(t), katamuki_y(t), katamuki(t) )
+             print *, 'xsame' 
+             call cal_x_same(x(t), x(t+1), y(t), y(t+1), high(t), norm(t), katamuki_x(t), katamuki_y(t), katamuki(t) )
          else if(y(t) == y(t+1) )then
-              call cal_y_same(x(t), x(t+1), y(t), y(t+1), high(t), norm(t), katamuki_x(t), katamuki_y(t), katamuki(t) )
+             print *, 'ysame' 
+             call cal_y_same(x(t), x(t+1), y(t), y(t+1), high(t), norm(t), katamuki_x(t), katamuki_y(t), katamuki(t) )
          end if
     !get Normal vector by turn -90degree unit vector 単位ベクトル(t)から-90回した法線ベクトル取得
     call cal_unit_vector  ( katamuki_x(t), katamuki_y(t), norm(t), unit_vector_x(t), unit_vector_y(t) )
     call cal_linertransform(unit_vector_x(t), unit_vector_y(t), nx(t), ny(t) )
 end do
 
+do i=1,4
+print*, nx(i),ny(i)
+end do
 !-----------------------------------------+
 !remake:直線のサンプリング!
 !       配列要素を1とそれ以外に分ける
@@ -346,16 +351,6 @@ end do
 end do
 
 !-----------------------------------------+
-!4直線と音源の位置関係判定
-!-----------------------------------------+
-!do i = 1,4
-!print *, nx(i),ny(i)
-!end do
-!
-!
-!
-!stop
-!-----------------------------------------+
 !   ソートして挟み込む範囲の決定■■■!
 !-----------------------------------------+
     do i = 1,ix
@@ -374,9 +369,6 @@ end do
     do i = 1,ix-1
         do no = 1, coordinateno
             tmpno(no) = tmp(no, i) !x座標における各直線の高さ値を一時的に格納
-            !if(no == 1)then
-            !    print *, i,tmpno(no)
-            !end if 
         end do
         
         call countup_no(tmpno, coordinateno, updw,2)!最大と最小を整理する
@@ -394,14 +386,21 @@ end do
 !-----------------------------------------+
 call coo_maxmin(x, coordinateno, xlim)
 
+
+
+
+if(y(1) == y(2) .and. y(3) ==y(4) .and. x(1) ==x(4) .and. x(2) ==x(3) )then 
+ny(3) = -1*ny(3)
+nx(2) = -1*nx(2)
+end if
 call system_clock(t1)   ! 開始時を記録
 !----------------------------------------+
 ! time loop
 !----------------------------------------+
 do t = 1, tx
     ! update of sound pressure
-    do i =  1,ix     !xlim(1),xlim(2)
-        do j = 1,jx  !range_y(i,1), range_y(i,2) 
+    do i =int( xlim(1) ),int( xlim(2) )
+        do j = int(range_y(i,1) ), int( range_y(i,2) ) 
             p1(i,j)	= p2(i,j) - crn * (u2(i,j) - u2(i-1,j) + v2(i,j) - v2(i,j-1))
         end do
     end do
@@ -413,29 +412,73 @@ do t = 1, tx
     end if
   
     ! swap of sound pressure
-    do i = 0,ix+1    ! xlim(1),xlim(2)!0, ix + 1
-        do j = 0,jx+1 ! range_y(i,1), range_y(i,2)
+    do i = int( xlim(1)) ,int( xlim(2) )+1!0, ix + 1
+        do j = int( range_y(i,1)) ,int( range_y(i,2) )+1
             p3(i,j)	= p2(i,j)
             p2(i,j)	= p1(i,j)
         end do
     end do
     
     ! update of x-directional velocity
-    do i = 1,ix       !xlim(1) , xlim(2)
-        do j = 1,jx   !range_y(i,1), range_y(i,2)
+    do i = int(xlim(1) ) , int(xlim(2) )
+        do j = int( range_y(i,1) ), int( range_y(i,2) )
             u1(i,j)	= u2(i,j) - crn * (p2(i+1,j) - p2(i,j))
         end do
     end do
 
     ! update of y-directional velocity
-    do i = 1,ix     !  xlim(1),xlim(2) !1, ix
-        do j = 1,jx !range_y(i,1) , range_y(i,2)  
+    do i = int(xlim(1)) ,int(xlim(2) ) !1, ix
+        do j = int(range_y(i,1) ) , int(range_y(i,2) )  
             v1(i,j)	= v2(i,j) - crn * (p2(i,j+1) - p2(i,j))
         end do
     end do
 
     !boundary condition
-    do k=1,coordinateno
+
+    print *,t
+    do k=1,coordinateno!1-2,2-3,3-4, 4-5が抜けてる
+    if(y(1) == y(2) .and. y(3) ==y(4) .and. x(1) ==x(4) .and. x(2) ==x(3) )then 
+        if(y(k) == y(k+1))then
+            print*,'y(k) =y(k+1)'
+            if(x(k) > x(k+1))then
+                do i = x(k+1), x(k)
+                    if(ny(k) < 0)then
+                        v1(i,y(k)  ) =    p2(i,y(k) )/Z
+                    else if(ny(k) > 0)then
+                        v1(i,y(k)) = -1*p2(i,y(k)+1 )/Z
+                    end if
+                end do
+
+            elseif(x(k) < x(k+1))then 
+                do i= x(k),x(k+1)
+                    if(ny(k) < 0)then
+                        v1(i,y(k)  ) =    p2(i,y(k) )/Z
+                    else if(ny(k) > 0)then
+                        v1(i,y(k)) = -1*p2(i,y(k)+1 )/Z
+                    end if
+                end do
+            endif
+        else if(x(k) == x(k+1))then
+            print*,'x(k) =x(k+1)'
+            if (y(k) > y(k+1) )then
+                do j = y(k+1), y(k)
+                    if(nx(k) <0)then
+                        u1(x(k) , j) = p2(x(k),j)/Z
+                    else if(nx(k) >0)then
+                        u1(x(k) ,j) = -1* p2(x(k)+1,j)/Z
+                    end if
+                end do
+            elseif(y(k+1) >y(k))then
+                 do j = y(k),y(k+1)
+                    if(nx(k) <0)then
+                        u1(x(k) , j) = p2(x(k),j)/Z
+                    else if(nx(k) >0)then
+                        u1(x(k) ,j ) = -1* p2(x(k)+1,j)/Z
+                    end if
+                end do
+            endif
+        end if
+    else
         do i = 1,ix
             do j =1,jx
                 if( length(k, i, j ) == 1)then
@@ -444,35 +487,51 @@ do t = 1, tx
                     !end if
                     if     (nx(k)>0 .and. ny(k)>0)then
                         print *, 'a'
-                        u1(i-1,j)   = -1*    p2(i,j) * abs(nx(k) )  /Z
-                        v1(i,j-1)   = -1*    p2(i,j) * abs(ny(k) ) /Z
+                        u1(i,j+1)   =   -1*p2(i+1,j+1) * abs(nx(k) )  /Z
+                        v1(i+1,j)   =   -1*p2(i+1,j+1) * abs(ny(k) ) /Z
                     else if(nx(k)>0 .and. ny(k)<0)then
-                        u1(i-1,j)   = -1*   p2(i,j) * abs( nx(k)) /Z
-                        v1(i, j)    = p2(i,j) * abs( ny(k)) /Z
+                        u1(i-1,j)   =   -1*p2(i,j) * abs( nx(k)) /Z
+                        v1(i, j)    =      p2(i,j) * abs( ny(k)) /Z
                     
                     else if(nx(k)<0 .and. ny(k)>0)then
-                        u1(i ,j  )  =  p2(i,j) * abs(nx(k)) /Z
-                        v1(i ,j-1)  = -1*    p2(i,j) * abs(ny(k)) /Z
+                        u1(i ,j  )  =      p2(i,j) * abs(nx(k)) /Z
+                        v1(i ,j-1)  =   -1*p2(i,j) * abs(ny(k)) /Z
                     
                     else if(nx(k)<0 .and. ny(k)<0)then
-                        u1(i,j)     =  p2(i,j) * abs(nx(k)) /Z
-                        v1(i,j)     =  p2(i,j) * abs(ny(k)) /Z
+                        u1(i,j)     =      p2(i,j) * abs(nx(k)) /Z
+                        v1(i,j)     =      p2(i,j) * abs(ny(k)) /Z
                     end if
                 end if
             end do
         end do
-    end do
+    end if
+end do
  
       
     ! swap of velocity
-    do i =   0,ix+1  !xlim(1)  ,xlim(2) !0, ix + 1
-        do j =  0,jx+1     ! range_y(i,1) , range_y(i,2) 
+    do i =   int( xlim(1) )   ,int(xlim(2) )!0, ix + 1
+        do j =  int(range_y(i,1)) ,int(  range_y(i,2) ) 
             u2(i,j)	= u1(i,j)
             v2(i,j)	= v1(i,j)
         end do
     end do
 
-
+    !-----------------------------------------+
+    !インパルス応答書き出し!
+    !-----------------------------------------+
+    !if(output == 0)then
+    !l =20
+    !do i = 1,int((reg_lx/span)-1)
+    !    do j = 1,int((reg_ly/span) -1)
+    !        l = counter
+    !            write(filename,*) l
+    !                filename= ''//trim(adjustl(filename))//'.csv'
+    !                    call gen_rp(l ,1,filename, len(filename), p2( int(i *(span/dx) ) ,int(j *(span/dx) ) ) )
+    !                counter = counter + 1
+    !    end do
+    !end do
+    !counter = 20
+    !end if
     !-----------------------------------------+
     !伝搬書き出し
     !-----------------------------------------+
